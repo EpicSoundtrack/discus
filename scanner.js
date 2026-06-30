@@ -49,7 +49,7 @@ export async function scanDrive(rootDir, { batchSize = 1000, onBatch, onProgress
     try {
       entries = await fs.promises.readdir(dir, { withFileTypes: true });
     } catch (err) {
-      if (err.code === 'EPERM' || err.code === 'EACCES') {
+      if (err.code === 'EPERM' || err.code === 'EACCES' || err.code === 'EBUSY') {
         skipped++;
         return;
       }
@@ -86,7 +86,7 @@ export async function scanDrive(rootDir, { batchSize = 1000, onBatch, onProgress
         } catch (err) {
           if (err.code === 'ENOENT') {
             // file disappeared between readdir and stat — skip silently
-          } else if (err.code === 'EPERM' || err.code === 'EACCES') {
+          } else if (err.code === 'EPERM' || err.code === 'EACCES' || err.code === 'EBUSY') {
             skipped++;
           } else {
             throw err;
