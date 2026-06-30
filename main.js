@@ -20,7 +20,7 @@ function createWindow() {
     width: 1200,
     height: 800,
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
+      preload: path.join(__dirname, 'preload.cjs'),
       contextIsolation: true,
       nodeIntegration: false,
     },
@@ -36,19 +36,21 @@ function startSidecar() {
 
   let ready = false;
   sidecar.stdout.on('data', (data) => {
-    const text = data.toString();
-    if (!ready && text.includes('DISCUS_READY')) {
+    const lines = data.toString().split('\n');
+    if (!ready && lines.some(l => l.trim() === 'DISCUS_READY')) {
       ready = true;
-      connectPipe();
+      connectPipe(Date.now());
     }
   });
 
-  sidecar.on('exit', () => {
-    if (win) win.webContents.send('sidecar-crash');
+  sidecar.on('exit', (code) => {
+    if (code !== 0 && win && !win.isDestroyed()) {
+      win.webContents.send('sidecar-crash');
+    }
   });
 }
 
-function connectPipe(attempt = 0) {
+function connectPipe(startTime, delay = 200) {
   const conn = net.createConnection({ path: '\\\\.\\pipe\\discus' });
 
   conn.on('connect', () => {
@@ -69,14 +71,16 @@ function connectPipe(attempt = 0) {
         } else {
           win?.webContents.send('sidecar-message', msg);
         }
-      } catch {}
+      } catch { /* ignore malformed lines */ }
     }
   });
 
   conn.on('error', () => {
-    if (attempt < 10) {
-      setTimeout(() => connectPipe(attempt + 1), 1000);
+    const elapsed = Date.now() - startTime;
+    if (elapsed + delay < 10000) {
+      setTimeout(() => connectPipe(startTime, Math.min(delay * 2, 2000)), delay);
     }
+    // else: give up silently after 10s
   });
 }
 
@@ -137,7 +141,7 @@ app.whenReady().then(() => {
     try {
       const origStat = fs.statSync(entry.original);
       const movedStat = fs.statSync(movedPath);
-      if (origStat.size !== movedStat.size || Math.floor(origStat.mtimeMs / 1000) !== entry.moved_at) {
+      if (origStat.size !== movedStat.size) {
         return { ok: false, error: 'A different file now exists at the original location. Move manually.' };
       }
     } catch (err) {
@@ -145,10 +149,14 @@ app.whenReady().then(() => {
       // original path doesn't exist — safe to restore
     }
 
+  try {
     fs.mkdirSync(path.dirname(entry.original), { recursive: true });
     fs.renameSync(movedPath, entry.original);
     removeManifestEntry(manifestPath, movedPath);
     return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
   });
 
   ipcMain.handle('empty-review-folder', (_, { reviewFolder }) => {
@@ -163,11 +171,14 @@ app.whenReady().then(() => {
 
 app.on('before-quit', (e) => {
   if (pipeConn) {
+    e.preventDefault();
     sendToSidecar({ type: 'shutdown' });
+    setTimeout(() => {
+      if (sidecar) sidecar.kill();
+      app.exit(0);
+    }, 2000);
+    pipeConn = null; // prevent re-entry
   }
-  setTimeout(() => {
-    if (sidecar) sidecar.kill();
-  }, 2000);
 });
 
 app.on('window-all-closed', () => {
