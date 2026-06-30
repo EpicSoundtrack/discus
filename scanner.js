@@ -79,8 +79,14 @@ export async function scanDrive(rootDir, { batchSize = 1000, onBatch, onProgress
             batch = [];
             if (onBatch) await onBatch(toSend);
           }
-        } catch {
-          skipped++;
+        } catch (err) {
+          if (err.code === 'ENOENT') {
+            // file disappeared between readdir and stat — skip silently
+          } else if (err.code === 'EPERM' || err.code === 'EACCES') {
+            skipped++;
+          } else {
+            throw err;
+          }
         }
       }
     }

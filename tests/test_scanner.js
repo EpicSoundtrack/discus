@@ -22,7 +22,7 @@ test('scanDrive: finds files and calls onBatch', async () => {
 
   const allFiles = batches.flat();
   assert.equal(allFiles.length, 2);
-  assert.ok(allFiles.every(f => f.path && f.size >= 0 && typeof f.mtime === 'number' && f.ext));
+  assert.ok(allFiles.every(f => f.path && f.size >= 0 && typeof f.mtime === 'number' && typeof f.ext === 'string'));
   fs.rmSync(dir, { recursive: true });
 });
 
