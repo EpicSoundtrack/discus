@@ -242,3 +242,81 @@ document.getElementById('move-selected').addEventListener('click', async () => {
     alert('Move failed: ' + err.message);
   }
 });
+
+// Review Folder Panel
+const REVIEW_FOLDER = 'D:\\DiscusReview';
+const MANIFEST_PATH = REVIEW_FOLDER + '\\.discus-manifest.json';
+
+function renderReviewList(entries) {
+  const list = document.getElementById('review-list');
+  const emptyEl = document.getElementById('review-empty');
+  list.innerHTML = '';
+
+  if (!entries || entries.length === 0) {
+    emptyEl.style.display = '';
+    return;
+  }
+  emptyEl.style.display = 'none';
+
+  entries.forEach(entry => {
+    const row = document.createElement('div');
+    row.className = 'review-row';
+
+    const filename = document.createElement('span');
+    filename.className = 'review-filename';
+    const parts = entry.moved_path.split(/[\\/]/);
+    filename.textContent = parts[parts.length - 1];
+
+    const original = document.createElement('span');
+    original.className = 'review-original';
+    original.title = entry.original;
+    original.textContent = entry.original;
+
+    const date = document.createElement('span');
+    date.className = 'review-date';
+    date.textContent = new Date(entry.moved_at * 1000).toLocaleDateString();
+
+    const restoreBtn = document.createElement('button');
+    restoreBtn.textContent = 'Restore';
+    restoreBtn.addEventListener('click', async () => {
+      const result = await window.discus.restoreFile(entry.moved_path, MANIFEST_PATH);
+      if (result && result.ok) {
+        row.remove();
+        const remaining = document.querySelectorAll('.review-row').length;
+        if (remaining === 0) document.getElementById('review-empty').style.display = '';
+      } else {
+        alert('Restore failed: ' + (result?.error || 'Unknown error'));
+      }
+    });
+
+    row.appendChild(filename);
+    row.appendChild(original);
+    row.appendChild(date);
+    row.appendChild(restoreBtn);
+    list.appendChild(row);
+  });
+}
+
+async function loadReviewFiles() {
+  try {
+    const entries = await window.discus.getReviewFiles(REVIEW_FOLDER);
+    renderReviewList(entries);
+  } catch (err) {
+    document.getElementById('review-empty').textContent = 'Error loading review folder: ' + err.message;
+  }
+}
+
+document.getElementById('refresh-review').addEventListener('click', loadReviewFiles);
+
+document.getElementById('empty-review').addEventListener('click', async () => {
+  if (!confirm('Permanently delete all files in the review folder? This cannot be undone.')) return;
+  try {
+    await window.discus.emptyReviewFolder(REVIEW_FOLDER);
+    renderReviewList([]);
+  } catch (err) {
+    alert('Failed to empty review folder: ' + err.message);
+  }
+});
+
+// Load review files when switching to that panel
+document.querySelector('.tab[data-panel="review"]').addEventListener('click', loadReviewFiles);
