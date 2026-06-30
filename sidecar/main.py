@@ -39,7 +39,7 @@ def main():
                 total_skipped += skipped
                 for group in groups:
                     file_meta_list = [{'path': p, **meta_by_path.get(p, {})} for p in group['files']]
-                    suggestion = get_suggestion(
+                    ai_result = get_suggestion(
                         [f for f in files if f['path'] in group['files']],
                         model=model
                     )
@@ -48,7 +48,8 @@ def main():
                         'group_type': group['group_type'],
                         'files': group['files'],
                         'fileMeta': file_meta_list,
-                        'suggestion': suggestion,
+                        'classification': ai_result['classification'],
+                        'suggestion': ai_result['suggestion'],
                     })
 
             elif msg_type == 'done':
