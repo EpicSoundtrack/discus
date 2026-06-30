@@ -1,6 +1,5 @@
 import fs from 'fs';
 import path from 'path';
-import os from 'os';
 
 export const DEFAULT_CONFIG = {
   reviewFolder: 'D:\\DiscusReview',
