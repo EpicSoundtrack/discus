@@ -1,0 +1,13 @@
+{
+  "name": "discus",
+  "version": "0.1.0",
+  "description": "GPU-accelerated duplicate file finder",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test tests/*.js"
+  },
+  "devDependencies": {
+    "electron": "^30.0.0"
+  }
+}

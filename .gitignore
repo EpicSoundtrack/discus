@@ -1,1 +1,8 @@
 .worktrees/
+node_modules/
+dist/
+*.pyc
+__pycache__/
+.discus-manifest.json
+discus.config.json
+.superpowers/
