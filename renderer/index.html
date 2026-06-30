@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'">
+  <title>Discus</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <nav class="tabs">
+      <button class="tab active" data-panel="scanner">Scanner</button>
+      <button class="tab" data-panel="results">Results</button>
+      <button class="tab" data-panel="review">Review Folder</button>
+    </nav>
+    <div class="gpu-badge" id="gpu-badge">CPU Mode</div>
+  </header>
+
+  <div id="warning-banner" class="warning hidden">
+    ⚠ AI suggestions unavailable — DISCUS env var not set
+  </div>
+
+  <main>
+    <!-- Scanner Panel -->
+    <section id="panel-scanner" class="panel active">
+      <div class="scanner-controls">
+        <label for="drive-select">Drive:</label>
+        <select id="drive-select"></select>
+        <button id="start-scan">Start Scan</button>
+      </div>
+      <div class="progress-area" id="progress-area" style="display:none">
+        <progress id="scan-progress" value="0" max="100"></progress>
+        <span id="progress-text">0 / ~0 files</span>
+        <span id="elapsed-time">00:00:00</span>
+        <div id="current-path" class="mono"></div>
+      </div>
+    </section>
+
+    <!-- Results Panel (populated in Task 11) -->
+    <section id="panel-results" class="panel" style="display:none">
+      <div class="empty-state">Run a scan to see results.</div>
+    </section>
+
+    <!-- Review Folder Panel (populated in Task 12) -->
+    <section id="panel-review" class="panel" style="display:none">
+      <div class="empty-state">No files in review folder.</div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
