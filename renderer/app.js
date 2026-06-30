@@ -80,6 +80,8 @@ document.getElementById('start-scan').addEventListener('click', async () => {
   btn.disabled = true;
   btn.textContent = 'Scanning…';
   document.getElementById('progress-area').style.display = 'flex';
+  const statusEl = document.getElementById('sidecar-status');
+  if (statusEl) { statusEl.textContent = ''; statusEl.classList.add('hidden'); }
   estimatedTotal = 0;
   scanStartTime = Date.now();
 
@@ -233,6 +235,35 @@ function updateSummary() {
     }
   }
 }
+
+window.discus.onSidecarProgress((msg) => {
+  const el = document.getElementById('sidecar-status');
+  if (!el) return;
+
+  if (msg.stage === 'hashing') {
+    if (msg.hashed === 0) {
+      el.textContent = `GPU hashing ${msg.total.toLocaleString()} files…`;
+      el.classList.remove('hidden');
+      el.classList.add('active');
+    } else if (msg.hashed >= msg.total) {
+      el.textContent = `Hashed ${msg.total.toLocaleString()} files`;
+      el.classList.remove('active');
+    } else {
+      el.textContent = `Hashing ${msg.hashed.toLocaleString()} / ${msg.total.toLocaleString()} files…`;
+    }
+  } else if (msg.stage === 'analyzing') {
+    if (msg.total === 0) {
+      el.textContent = 'No duplicate groups found';
+      el.classList.remove('hidden', 'active');
+    } else if (msg.analyzed >= msg.total) {
+      el.textContent = `Analysis complete — ${msg.total} group${msg.total !== 1 ? 's' : ''} found`;
+      el.classList.remove('active');
+    } else {
+      el.textContent = `Analyzing group ${msg.analyzed + 1} / ${msg.total}…`;
+      el.classList.add('active');
+    }
+  }
+});
 
 window.discus.onSidecarCrash(() => {
   const banner = document.getElementById('warning-banner');

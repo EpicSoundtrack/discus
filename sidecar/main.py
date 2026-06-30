@@ -35,9 +35,14 @@ def main():
                 files = msg.get('files', [])
                 # Build metadata lookup: path -> {size, mtime, ext}
                 meta_by_path = {f['path']: {'size': f.get('size', 0), 'mtime': f.get('mtime', 0), 'ext': f.get('ext', '')} for f in files}
+
+                pipe.send({'type': 'progress', 'stage': 'hashing', 'hashed': 0, 'total': len(files)})
                 groups, skipped = group_by_hash(files)
                 total_skipped += skipped
-                for group in groups:
+                pipe.send({'type': 'progress', 'stage': 'hashing', 'hashed': len(files), 'total': len(files)})
+
+                pipe.send({'type': 'progress', 'stage': 'analyzing', 'analyzed': 0, 'total': len(groups)})
+                for i, group in enumerate(groups):
                     file_meta_list = [{'path': p, **meta_by_path.get(p, {})} for p in group['files']]
                     ai_result = get_suggestion(
                         [f for f in files if f['path'] in group['files']],
@@ -51,6 +56,7 @@ def main():
                         'classification': ai_result['classification'],
                         'suggestion': ai_result['suggestion'],
                     })
+                    pipe.send({'type': 'progress', 'stage': 'analyzing', 'analyzed': i + 1, 'total': len(groups)})
 
             elif msg_type == 'done':
                 pipe.send({'type': 'complete', 'skipped': total_skipped})

@@ -68,6 +68,8 @@ function connectPipe(startTime, delay = 200) {
         const msg = JSON.parse(line);
         if (msg.type === 'gpu_status') {
           win?.webContents.send('gpu-status', msg.mode);
+        } else if (msg.type === 'progress') {
+          win?.webContents.send('sidecar-progress', msg);
         } else {
           win?.webContents.send('sidecar-message', msg);
         }

@@ -13,4 +13,5 @@ contextBridge.exposeInMainWorld('discus', {
   onSidecarCrash: (cb) => ipcRenderer.on('sidecar-crash', () => cb()),
   onGpuStatus: (cb) => ipcRenderer.on('gpu-status', (_, mode) => cb(mode)),
   onShowWarning: (cb) => ipcRenderer.on('show-warning', (_, msg) => cb(msg)),
+  onSidecarProgress: (cb) => ipcRenderer.on('sidecar-progress', (_, msg) => cb(msg)),
 });
