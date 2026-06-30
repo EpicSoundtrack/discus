@@ -36,14 +36,29 @@
       </div>
     </section>
 
-    <!-- Results Panel (populated in Task 11) -->
+    <!-- Results Panel -->
     <section id="panel-results" class="panel" style="display:none">
-      <div class="empty-state">Run a scan to see results.</div>
+      <div id="results-summary" class="results-summary hidden">
+        <span id="summary-groups">0 duplicate groups found</span>
+        <span class="sep">|</span>
+        <span id="summary-wasted">0 B wasted</span>
+      </div>
+      <div id="results-empty" class="empty-state">Run a scan to see results.</div>
+      <div class="bulk-actions hidden" id="bulk-actions">
+        <button id="select-suggested">Select All Suggested</button>
+        <button id="move-selected">Move Selected to Review</button>
+      </div>
+      <div id="groups-list"></div>
     </section>
 
-    <!-- Review Folder Panel (populated in Task 12) -->
+    <!-- Review Folder Panel -->
     <section id="panel-review" class="panel" style="display:none">
-      <div class="empty-state">No files in review folder.</div>
+      <div class="review-toolbar">
+        <button id="refresh-review">Refresh</button>
+        <button id="empty-review" class="danger">Empty Review Folder</button>
+      </div>
+      <div id="review-empty" class="empty-state">Review folder is empty.</div>
+      <div id="review-list"></div>
     </section>
   </main>
 

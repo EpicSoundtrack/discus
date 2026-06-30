@@ -98,3 +98,147 @@ document.getElementById('start-scan').addEventListener('click', async () => {
     document.getElementById('current-path').textContent = 'Scan complete';
   }
 });
+
+// Results panel state
+const groups = [];
+let wasted = 0;
+
+function humanSize(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  if (bytes < 1024 * 1024 * 1024) return (bytes / 1024 / 1024).toFixed(1) + ' MB';
+  return (bytes / 1024 / 1024 / 1024).toFixed(2) + ' GB';
+}
+
+function formatDate(unixSecs) {
+  return new Date(unixSecs * 1000).toLocaleDateString();
+}
+
+function renderGroup(group) {
+  const card = document.createElement('div');
+  card.className = 'group-card';
+
+  const header = document.createElement('div');
+  header.className = 'group-header';
+  const badge = document.createElement('span');
+  badge.className = 'badge ' + (group.group_type === 'exact' ? 'badge-exact' : 'badge-near');
+  badge.textContent = group.group_type === 'exact' ? 'Exact Duplicate' : 'Near Duplicate (image)';
+  header.appendChild(badge);
+  card.appendChild(header);
+
+  if (group.suggestion) {
+    const sug = document.createElement('div');
+    sug.className = 'suggestion';
+    sug.textContent = '💡 ' + group.suggestion;
+    card.appendChild(sug);
+  }
+
+  // Store file metadata keyed by path for size/mtime lookup
+  const fileMeta = {};
+  (group.fileMeta || []).forEach(f => { fileMeta[f.path] = f; });
+
+  group.files.forEach((filePath, i) => {
+    const row = document.createElement('div');
+    row.className = 'file-row';
+
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.dataset.path = filePath;
+    // Mark all but the first file as "suggested to remove" for Select All Suggested
+    cb.dataset.suggested = i > 0 ? '1' : '0';
+
+    const meta = fileMeta[filePath] || {};
+    const name = document.createElement('span');
+    name.className = 'file-name';
+    name.textContent = filePath.split('\\').pop() || filePath.split('/').pop() || filePath;
+
+    const size = document.createElement('span');
+    size.className = 'file-size';
+    size.textContent = meta.size != null ? humanSize(meta.size) : '';
+
+    const pathEl = document.createElement('span');
+    pathEl.className = 'file-path';
+    pathEl.title = filePath;
+    pathEl.textContent = filePath;
+
+    const date = document.createElement('span');
+    date.className = 'file-date';
+    date.textContent = meta.mtime ? formatDate(meta.mtime) : '';
+
+    row.appendChild(cb);
+    row.appendChild(name);
+    row.appendChild(size);
+    row.appendChild(pathEl);
+    row.appendChild(date);
+    card.appendChild(row);
+  });
+
+  return card;
+}
+
+function updateSummary() {
+  const summaryEl = document.getElementById('results-summary');
+  const emptyEl = document.getElementById('results-empty');
+  const bulkEl = document.getElementById('bulk-actions');
+
+  if (groups.length === 0) {
+    summaryEl.classList.add('hidden');
+    emptyEl.style.display = '';
+    bulkEl.classList.add('hidden');
+    return;
+  }
+
+  summaryEl.classList.remove('hidden');
+  emptyEl.style.display = 'none';
+  bulkEl.classList.remove('hidden');
+  document.getElementById('summary-groups').textContent = groups.length + ' duplicate group' + (groups.length !== 1 ? 's' : '') + ' found';
+  document.getElementById('summary-wasted').textContent = humanSize(wasted) + ' wasted';
+}
+
+window.discus.onSidecarMessage((msg) => {
+  if (msg.type === 'group') {
+    groups.push(msg);
+    // Accumulate wasted space: all files in group except one (the "keep")
+    const fileSizes = (msg.fileMeta || []).map(f => f.size || 0);
+    if (fileSizes.length > 1) {
+      const maxSize = Math.max(...fileSizes);
+      wasted += fileSizes.reduce((s, x) => s + x, 0) - maxSize;
+    }
+    const list = document.getElementById('groups-list');
+    list.appendChild(renderGroup(msg));
+    updateSummary();
+
+    // Switch to results tab if not already there
+    if (!document.getElementById('panel-results').classList.contains('active')) {
+      document.querySelector('.tab[data-panel="results"]').click();
+    }
+  }
+});
+
+// Select All Suggested
+document.getElementById('select-suggested').addEventListener('click', () => {
+  document.querySelectorAll('input[type=checkbox][data-suggested="1"]').forEach(cb => {
+    cb.checked = true;
+  });
+});
+
+// Move Selected to Review
+document.getElementById('move-selected').addEventListener('click', async () => {
+  const checked = Array.from(document.querySelectorAll('input[type=checkbox]:checked'));
+  const paths = checked.map(cb => cb.dataset.path);
+  if (paths.length === 0) return;
+
+  const config = { reviewFolder: 'D:\\DiscusReview' }; // default; Task 14 will wire config
+  try {
+    await window.discus.moveFiles(paths, config.reviewFolder);
+    // Remove moved rows from UI
+    checked.forEach(cb => cb.closest('.file-row').remove());
+    // Remove empty group cards
+    document.querySelectorAll('.group-card').forEach(card => {
+      const rows = card.querySelectorAll('.file-row');
+      if (rows.length === 0) card.remove();
+    });
+  } catch (err) {
+    alert('Move failed: ' + err.message);
+  }
+});
