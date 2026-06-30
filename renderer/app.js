@@ -89,7 +89,11 @@ document.getElementById('start-scan').addEventListener('click', async () => {
   }, 1000);
 
   try {
-    await window.discus.startScan(drive, { batchSize: 1000 });
+    await window.discus.startScan(drive, {
+      batchSize: 1000,
+      minFileSize: 1024 * 1024,
+      ignorePaths: ['Windows', 'Program Files', 'Program Files (x86)', 'node_modules', 'cmder', '$Recycle.Bin', 'AppData\Local\Temp', 'AppData\Roaming\npm', '.git'],
+    });
   } finally {
     clearInterval(elapsedTimer);
     btn.disabled = false;

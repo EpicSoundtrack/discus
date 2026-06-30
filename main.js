@@ -111,6 +111,8 @@ app.whenReady().then(() => {
   ipcMain.handle('start-scan', async (_, { rootDir, config }) => {
     await scanDrive(rootDir, {
       batchSize: config.batchSize || 1000,
+      minFileSize: config.minFileSize || 0,
+      ignorePaths: config.ignorePaths || [],
       onBatch: (files) => sendToSidecar({ type: 'batch', files }),
       onProgress: (data) => win?.webContents.send('scan-progress', data),
       onEstimate: (n) => win?.webContents.send('scan-estimate', n),
