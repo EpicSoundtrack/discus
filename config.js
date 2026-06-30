@@ -5,7 +5,7 @@ export const DEFAULT_CONFIG = {
   reviewFolder: 'D:\\DiscusReview',
   openaiModel: 'gpt-4o-mini',
   batchSize: 1000,
-  minFileSize: 1024 * 1024,  // 1 MB — files smaller than this are skipped
+  minFileSize: 100 * 1024,  // 100 KB — files smaller than this are skipped
   ignorePaths: [
     'Windows',
     'Program Files',

@@ -21,8 +21,8 @@ test('merges saved config over defaults', () => {
   fs.rmSync(dir, { recursive: true });
 });
 
-test('DEFAULT_CONFIG has minFileSize of 1MB', () => {
-  assert.equal(DEFAULT_CONFIG.minFileSize, 1024 * 1024);
+test('DEFAULT_CONFIG has minFileSize of 100KB', () => {
+  assert.equal(DEFAULT_CONFIG.minFileSize, 100 * 1024);
 });
 
 test('DEFAULT_CONFIG ignorePaths includes common app dirs', () => {
