@@ -242,3 +242,15 @@ button.danger:hover {
 .review-filename { font-weight: 500; }
 .review-original { font-family: 'Cascadia Code', 'Fira Code', monospace; color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; }
 .review-date { color: var(--text-dim); white-space: nowrap; }
+
+button.link-btn {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: 12px;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+  margin-bottom: 8px;
+}
+button.link-btn:hover { background: none; color: var(--accent-hover); }

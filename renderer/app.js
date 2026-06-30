@@ -102,6 +102,7 @@ document.getElementById('start-scan').addEventListener('click', async () => {
 // Results panel state
 const groups = [];
 let wasted = 0;
+let showAll = false;
 
 function humanSize(bytes) {
   if (bytes < 1024) return bytes + ' B';
@@ -117,6 +118,7 @@ function formatDate(unixSecs) {
 function renderGroup(group) {
   const card = document.createElement('div');
   card.className = 'group-card';
+  card.dataset.classification = group.classification || 'unknown';
 
   const header = document.createElement('div');
   header.className = 'group-header';
@@ -176,23 +178,56 @@ function renderGroup(group) {
   return card;
 }
 
+function applyFilter() {
+  document.querySelectorAll('.group-card').forEach(card => {
+    const cls = card.dataset.classification;
+    if (showAll || cls === 'actionable' || cls === 'unknown') {
+      card.style.display = '';
+    } else {
+      card.style.display = 'none';
+    }
+  });
+  updateSummary();
+}
+
 function updateSummary() {
   const summaryEl = document.getElementById('results-summary');
   const emptyEl = document.getElementById('results-empty');
   const bulkEl = document.getElementById('bulk-actions');
+  const toggleEl = document.getElementById('show-all-toggle');
 
   if (groups.length === 0) {
     summaryEl.classList.add('hidden');
     emptyEl.style.display = '';
     bulkEl.classList.add('hidden');
+    if (toggleEl) toggleEl.style.display = 'none';
     return;
   }
+
+  const actionable = groups.filter(g => g.classification === 'actionable' || g.classification === 'unknown');
+  const skipped = groups.filter(g => g.classification === 'skip');
 
   summaryEl.classList.remove('hidden');
   emptyEl.style.display = 'none';
   bulkEl.classList.remove('hidden');
-  document.getElementById('summary-groups').textContent = groups.length + ' duplicate group' + (groups.length !== 1 ? 's' : '') + ' found';
+
+  if (showAll) {
+    document.getElementById('summary-groups').textContent = `${groups.length} duplicate groups found`;
+  } else {
+    document.getElementById('summary-groups').textContent = `${actionable.length} actionable groups`;
+  }
   document.getElementById('summary-wasted').textContent = humanSize(wasted) + ' wasted';
+
+  if (toggleEl) {
+    if (skipped.length > 0) {
+      toggleEl.style.display = '';
+      toggleEl.textContent = showAll
+        ? 'Hide system/app duplicates'
+        : `Show all ${groups.length} groups (includes ${skipped.length} system/app)`;
+    } else {
+      toggleEl.style.display = 'none';
+    }
+  }
 }
 
 window.discus.onSidecarCrash(() => {
@@ -212,7 +247,7 @@ window.discus.onSidecarMessage((msg) => {
     }
     const list = document.getElementById('groups-list');
     list.appendChild(renderGroup(msg));
-    updateSummary();
+    applyFilter();
 
     // Switch to results tab if not already there
     if (!document.getElementById('panel-results').classList.contains('active')) {
@@ -223,6 +258,12 @@ window.discus.onSidecarMessage((msg) => {
     banner.textContent = '⚠ ' + msg.message;
     banner.classList.remove('hidden');
   }
+});
+
+// Show all toggle
+document.getElementById('show-all-toggle').addEventListener('click', () => {
+  showAll = !showAll;
+  applyFilter();
 });
 
 // Select All Suggested
