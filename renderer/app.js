@@ -195,6 +195,12 @@ function updateSummary() {
   document.getElementById('summary-wasted').textContent = humanSize(wasted) + ' wasted';
 }
 
+window.discus.onSidecarCrash(() => {
+  const banner = document.getElementById('warning-banner');
+  banner.textContent = '⚠ Sidecar process crashed. Restart the app to scan again.';
+  banner.classList.remove('hidden');
+});
+
 window.discus.onSidecarMessage((msg) => {
   if (msg.type === 'group') {
     groups.push(msg);
@@ -212,6 +218,10 @@ window.discus.onSidecarMessage((msg) => {
     if (!document.getElementById('panel-results').classList.contains('active')) {
       document.querySelector('.tab[data-panel="results"]').click();
     }
+  } else if (msg.type === 'error') {
+    const banner = document.getElementById('warning-banner');
+    banner.textContent = '⚠ ' + msg.message;
+    banner.classList.remove('hidden');
   }
 });
 

@@ -33,9 +33,12 @@ def main():
 
             if msg_type == 'batch':
                 files = msg.get('files', [])
+                # Build metadata lookup: path -> {size, mtime, ext}
+                meta_by_path = {f['path']: {'size': f.get('size', 0), 'mtime': f.get('mtime', 0), 'ext': f.get('ext', '')} for f in files}
                 groups, skipped = group_by_hash(files)
                 total_skipped += skipped
                 for group in groups:
+                    file_meta_list = [{'path': p, **meta_by_path.get(p, {})} for p in group['files']]
                     suggestion = get_suggestion(
                         [f for f in files if f['path'] in group['files']],
                         model=model
@@ -44,6 +47,7 @@ def main():
                         'type': 'group',
                         'group_type': group['group_type'],
                         'files': group['files'],
+                        'fileMeta': file_meta_list,
                         'suggestion': suggestion,
                     })
 
