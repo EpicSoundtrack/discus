@@ -1,3 +1,4 @@
+pywin32>=306
 warp-lang>=1.4.0
 cupy-cuda12x>=13.0.0
 xxhash>=3.4.1
