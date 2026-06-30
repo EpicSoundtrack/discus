@@ -75,5 +75,35 @@ class TestHasher(unittest.TestCase):
         finally:
             os.unlink(f1.name); os.unlink(f2.name); os.unlink(f3.name)
 
+    def test_group_by_hash_image_exact_duplicates_are_exact_type(self):
+        """Byte-identical image files should be 'exact' group type."""
+        try:
+            from PIL import Image as PILImage
+            import io
+            img = PILImage.new('RGB', (10, 10), color=(255, 0, 0))
+            buf = io.BytesIO()
+            img.save(buf, format='PNG')
+            img_bytes = buf.getvalue()
+        except ImportError:
+            self.skipTest('Pillow not available')
+
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.png') as f1, \
+             tempfile.NamedTemporaryFile(delete=False, suffix='.png') as f2:
+            f1.write(img_bytes)
+            f2.write(img_bytes)
+            f1.flush(); f2.flush()
+        try:
+            file_batch = [
+                {'path': f1.name, 'size': len(img_bytes), 'mtime': 0, 'ext': '.png'},
+                {'path': f2.name, 'size': len(img_bytes), 'mtime': 0, 'ext': '.png'},
+            ]
+            groups, skipped = group_by_hash(file_batch)
+            self.assertEqual(len(groups), 1)
+            self.assertEqual(groups[0]['group_type'], 'exact')
+            self.assertEqual(skipped, 0)
+        finally:
+            os.unlink(f1.name); os.unlink(f2.name)
+
+
 if __name__ == '__main__':
     unittest.main()

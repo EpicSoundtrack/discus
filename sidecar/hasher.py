@@ -195,8 +195,11 @@ def group_by_hash(file_batch):
             sub_groups = _phash_group(paths)
             for sg in sub_groups:
                 if len(sg) >= 2:
-                    groups.append({'group_type': 'near', 'files': sg})
+                    groups.append({'group_type': 'exact', 'files': sg})
         else:
             groups.append({'group_type': 'exact', 'files': paths})
 
     return groups, skipped
+
+
+_check_gpu()
