@@ -32,7 +32,7 @@ async function estimateTotal(rootDir) {
   return Math.round(avgFilesPerDir * estimatedDirs);
 }
 
-export async function scanDrive(rootDir, { batchSize = 1000, onBatch, onProgress, onEstimate, onDone } = {}) {
+export async function scanDrive(rootDir, { batchSize = 1000, onBatch, onProgress, onEstimate, onDone, minFileSize = 0, ignorePaths = [] } = {}) {
   // Estimate first
   const estimated = await estimateTotal(rootDir);
   if (onEstimate) onEstimate(estimated);
@@ -60,11 +60,15 @@ export async function scanDrive(rootDir, { batchSize = 1000, onBatch, onProgress
       if (entry.isSymbolicLink()) continue;
 
       if (entry.isDirectory()) {
-        queue.push(path.join(dir, entry.name));
+        const skip = ignorePaths.some(p =>
+          entry.name.toLowerCase().includes(p.toLowerCase())
+        );
+        if (!skip) queue.push(path.join(dir, entry.name));
       } else if (entry.isFile()) {
         const filePath = path.join(dir, entry.name);
         try {
           const stat = await fs.promises.stat(filePath);
+          if (stat.size < minFileSize) continue;
           batch.push({
             path: filePath,
             size: stat.size,

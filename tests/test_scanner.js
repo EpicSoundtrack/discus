@@ -84,6 +84,40 @@ test('scanDrive: calls onEstimate before walk', async () => {
   fs.rmSync(dir, { recursive: true });
 });
 
+test('scanDrive: skips files below minFileSize', async () => {
+  const dir = makeTempDir();
+  fs.writeFileSync(path.join(dir, 'small.txt'), 'x'); // 1 byte
+  fs.writeFileSync(path.join(dir, 'big.txt'), Buffer.alloc(2 * 1024 * 1024)); // 2 MB
+
+  const found = [];
+  await scanDrive(dir, {
+    minFileSize: 1024 * 1024, // 1 MB
+    onBatch: (b) => found.push(...b),
+  });
+
+  assert.equal(found.length, 1);
+  assert.ok(found[0].path.endsWith('big.txt'));
+  fs.rmSync(dir, { recursive: true });
+});
+
+test('scanDrive: skips ignored directories', async () => {
+  const dir = makeTempDir();
+  const nodeModules = path.join(dir, 'node_modules');
+  fs.mkdirSync(nodeModules);
+  fs.writeFileSync(path.join(nodeModules, 'pkg.js'), 'module');
+  fs.writeFileSync(path.join(dir, 'index.js'), 'code');
+
+  const found = [];
+  await scanDrive(dir, {
+    ignorePaths: ['node_modules'],
+    onBatch: (b) => found.push(...b),
+  });
+
+  assert.equal(found.length, 1);
+  assert.ok(found[0].path.endsWith('index.js'));
+  fs.rmSync(dir, { recursive: true });
+});
+
 test('scanDrive: skips unreadable dirs without throwing', async () => {
   // Can't easily create EPERM dirs in tests, but verify scan completes on normal dirs
   const dir = makeTempDir();
