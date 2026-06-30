@@ -20,3 +20,20 @@ test('merges saved config over defaults', () => {
   assert.equal(cfg.openaiModel, 'gpt-4o-mini'); // default preserved
   fs.rmSync(dir, { recursive: true });
 });
+
+test('DEFAULT_CONFIG has minFileSize of 1MB', () => {
+  assert.equal(DEFAULT_CONFIG.minFileSize, 1024 * 1024);
+});
+
+test('DEFAULT_CONFIG ignorePaths includes common app dirs', () => {
+  assert.ok(DEFAULT_CONFIG.ignorePaths.includes('node_modules'));
+  assert.ok(DEFAULT_CONFIG.ignorePaths.includes('Windows'));
+});
+
+test('loadConfig merges ignorePaths from saved config', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'discus-'));
+  fs.writeFileSync(path.join(dir, 'discus.config.json'), JSON.stringify({ ignorePaths: ['custom'] }));
+  const cfg = loadConfig(dir);
+  assert.deepEqual(cfg.ignorePaths, ['custom']);
+  fs.rmSync(dir, { recursive: true });
+});

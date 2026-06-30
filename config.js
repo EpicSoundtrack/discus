@@ -5,6 +5,18 @@ export const DEFAULT_CONFIG = {
   reviewFolder: 'D:\\DiscusReview',
   openaiModel: 'gpt-4o-mini',
   batchSize: 1000,
+  minFileSize: 1024 * 1024,  // 1 MB — files smaller than this are skipped
+  ignorePaths: [
+    'Windows',
+    'Program Files',
+    'Program Files (x86)',
+    'node_modules',
+    'cmder',
+    '$Recycle.Bin',
+    'AppData\\Local\\Temp',
+    'AppData\\Roaming\\npm',
+    '.git',
+  ],
 };
 
 export function loadConfig(userDataDir) {
